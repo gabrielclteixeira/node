@@ -6,7 +6,11 @@ const app = express();
 
 app.use(express.json());
 
-// Middlewares
+
+
+// Middlewares  
+
+app.use(morgan('dev'));
 
 app.use( (req, res, next) => {
     console.log('Hello from the middleware');
@@ -114,20 +118,74 @@ function createTour (req, res) {
 
 }
 
+function getAllUsers(req, res) {
+    res.status(500).json({
+        status: 'error',
+        message: 'Not yet implemented',
+        data: null
+    })
+}
+
+function getUser(req, res) {
+    res.status(500).json({
+        status: 'error',
+        message: 'Not yet implemented',
+        data: null
+    })
+}
+
+function deleteUser(req, res) {
+    res.status(500).json({
+        status: 'error',
+        message: 'Not yet implemented',
+        data: null
+    })
+}
+
+function updateUser(req, res) {
+    res.status(500).json({
+        status: 'error',
+        message: 'Not yet implemented',
+        data: null
+    })
+}
+
+function createUser(req, res) {
+    res.status(500).json({
+        status: 'error',
+        message: 'Not yet implemented',
+        data: null
+    })
+}
+
 // End of route functions
 
 // Route handling
+app.use('/api/v1/tours', tourRouter)
+const tourRouter = express.Router();
 
-app
+tourRouter
     .route('/app/v1/tours')
     .get(getAllTours)
     .post(createTour);
 
-app
+tourRouter
     .route('/app/v1/tours/:id')
     .patch(updateTour)
     .get(getTour)
     .delete(deleteTour);
+
+app
+    .route('/api/v1/users')
+    .get(getAllUsers)
+    .post(createUser);
+
+app
+    .route('/api/v1/users/:id')
+    .get(getUser)
+    .patch(updateUser)
+    .delete(deleteUser);
+
 
 // End of route handling
 
