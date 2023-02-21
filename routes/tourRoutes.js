@@ -5,12 +5,12 @@ const tourController = require(`${__dirname}/../controllers/tourController`);
 
 const router = express.Router();
 
-router.param('id', tourController.checkId);
+// router.param('id', tourController.checkId);
 
 router
     .route('/')
     .get(tourController.getAllTours)
-    .post(tourController.validateBody, tourController.createTour);
+    .post(tourController.createTour);
 
 router
     .route('/:id')
