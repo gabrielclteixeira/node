@@ -1,6 +1,28 @@
+const mongoose = require('mongoose');
+
+const dotenv = require('dotenv');
+
+dotenv.config({path: './config.env'});
+
+// eslint-disable-next-line import/no-dynamic-require
 const app = require(`${__dirname}/app`);
 
-const port = 3000;
+const DB = process.env.DATABASE_LOCAL;
+
+mongoose.connect(DB, {
+    useNewUrlParser: true,
+    // useCreateIndex: true,
+    // useFindAndModify: false
+}).then(con => {
+    console.log(con.connections);
+    console.log('DB connect success');
+}).catch(err => {
+    console.error(`Error: ${err}`);
+})
+
+const port = process.env.PORT || 8000;
+
+// console.log(process.env)
 
 app.listen(port, () => {
     console.log(`App running on port ${port}...`);
