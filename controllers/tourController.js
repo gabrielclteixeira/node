@@ -1,13 +1,24 @@
-const { query } = require("express");
-const { all } = require("../app");
+// const { query } = require("express");
+// const { all } = require("../app");
 const Tour = require("../models/tourModel");
 
 // const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
 
-exports.getAllTours = async (req, res) => {
-    try{
-        // eslint-disable-next-line node/no-unsupported-features/es-syntax
-        const queryObj = {...req.query};
+exports.aliasTopTours = (req, res, next) => {
+    req.query.limit = '5';
+    req.query.sort = '-ratingsAverage,price';
+    req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+    next();
+}
+
+class APIFeatures {
+    constructor(query, queryString) {
+        this.query = query;
+        this.queryString = queryString;
+    }
+
+    filter(){
+        const queryObj = {...this.queryString};
         const excludedField = ['page', 'sort', 'limit', 'fields'];
 
         excludedField.forEach(e => delete queryObj[e]) 
@@ -16,45 +27,92 @@ exports.getAllTours = async (req, res) => {
 
         queryStr = queryStr.replace(/\b(gte|gt|lt|lte)\b/g, match => `$${match}`);
 
-        console.log(JSON.parse(queryStr));
+        this.query.find(JSON.parse(queryStr));
 
-        let allTours = Tour.find(JSON.parse(queryStr));
+        return this;
 
-        if (req.query.sort){
+        // let query = Tour.find(JSON.parse(queryStr));
+    }
 
-            const sortBy = req.query.sort.split(',').join(' ');
+    sort(){
+        if (this.queryString.sort){
 
-            allTours = allTours.sort(sortBy);
+            const sortBy = this.queryString.sort.split(',').join(' ');
+
+            this.query = this.query.sort(sortBy);
+
         } 
+
         else{
-            allTours = allTours.sort('-createdAt');
+            this.query = this.query.sort('-createdAt');
         }
+
+        return this;
+    }
+
+    limit(){
+        if (req.query.fields){
+            const fields = req.query.fields.split(',').join(' ');
+
+            query = query.select(fields);
+        }
+        else{
+            query = query.select('-__v');
+        }
+    }
+}
+
+exports.getAllTours = async (req, res) => {
+    try{
+        // eslint-disable-next-line node/no-unsupported-features/es-syntax
+        // const queryObj = {...req.query};
+        // const excludedField = ['page', 'sort', 'limit', 'fields'];
+
+        // excludedField.forEach(e => delete queryObj[e]) 
+
+        // let queryStr = JSON.stringify(queryObj);
+
+        // queryStr = queryStr.replace(/\b(gte|gt|lt|lte)\b/g, match => `$${match}`);
+
+        // let query = Tour.find(JSON.parse(queryStr));
+
+        // if (req.query.sort){
+
+        //     const sortBy = req.query.sort.split(',').join(' ');
+
+        //     query = query.sort(sortBy);
+        // } 
+        // else{
+        //     query = query.sort('-createdAt');
+        // }
 
         if (req.query.fields){
-            const fields = req.query.sort.split(',').join(' ');
+            const fields = req.query.fields.split(',').join(' ');
 
-            allTours = allTours.select(fields);
+            query = query.select(fields);
         }
         else{
-            allTours = allTours.select('-__v');
+            query = query.select('-__v');
         }
 
         const page = req.query.page * 1 || 1;
         const limit = req.query.limit * 1 || 100;
         const skip = (page - 1) * limit;
 
-        allTours = allTours.skip(skip).limit(limit);
+        query = query.skip(skip).limit(limit);
 
         if (req.query.page){
-            const numTours = await Tour.countDocuments();
+            const numTours = await Tour.countDocuments(JSON.parse(queryStr));
             if (skip >= numTours) throw new Error('This page exceeds limit!');
         }
 
-        const tours = await allTours;
+        const features = new APIFeatures(Tour.find(), req.query).filter().sort();
+        const tours = await features.query;
 
         res.status(200).json({
             status: 'success',
             results: tours.length,
+            total: await Tour.countDocuments(JSON.parse(queryStr)),
             data: {
                 tours
             }
@@ -64,7 +122,8 @@ exports.getAllTours = async (req, res) => {
     catch(err) {
         res.status(400).json({
             status: 'fail',
-            message: err
+            message: `${err}`,
+            query: req.query
         })
     }
 }
