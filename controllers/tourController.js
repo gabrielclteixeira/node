@@ -152,10 +152,32 @@ exports.getTourStats = async (req, res) => {
         res.status(200).json({
             status: 'success',
             data: stats
-        })
+        });
         
     }
     catch(err){
+        res.status(400).json({
+            status: 'fail',
+            message: `${err}`,
+            query: req.query
+        })
+    }
+}
+
+exports.getMonthlyPlan = async (req, res) => {
+    try{
+        const year = req.paras.year * 1;
+
+        const plan = await Tour.aggregate([
+            
+        ]);
+
+        res.status(200).json({
+            status: 'success',
+            data: plan
+        });
+    }
+    catch (err) {
         res.status(400).json({
             status: 'fail',
             message: `${err}`,
